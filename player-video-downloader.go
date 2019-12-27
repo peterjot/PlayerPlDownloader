@@ -121,7 +121,7 @@ func getValue(data string, expr string, position int) string {
 
 func main() {
 	urlParam := flag.String("url", "", "Player.pl video url")
-	targetDirParam := flag.String("dir", DefaultTargetDir, "Directory path")
+	targetDirParam := flag.String("dir", DefaultTargetDir, "Directory path to save the")
 	videoIdParam := flag.String("id", "", "Video id")
 	flag.Parse()
 
