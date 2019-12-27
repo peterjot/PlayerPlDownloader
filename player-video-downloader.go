@@ -33,14 +33,11 @@ func DownloadByVideoId(videoId string, targetDir string) string {
 }
 
 func downloadFromSource(videoId string, targetDir string, videoSourceUrl string) string {
-	fmt.Println("Fetching video...")
 	resp, err := http.Get(videoSourceUrl)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer resp.Body.Close()
-
-	fmt.Println("Creating file...")
 
 	filePath := targetDir + "/" + videoId + ".mp4"
 	out, err := os.Create(filePath)
@@ -49,18 +46,17 @@ func downloadFromSource(videoId string, targetDir string, videoSourceUrl string)
 	}
 	defer out.Close()
 
-	fmt.Println("Reading to file...")
-	if _, err = io.Copy(out, resp.Body); err != nil {
+	counter := &WriteCounter{Total: uint64(resp.ContentLength)}
+	_, err = io.Copy(out, io.TeeReader(resp.Body, counter))
+	if err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Println("Video saved to: " + filePath)
+	fmt.Println("\nVideo saved to: " + filePath)
 	return filePath
 }
 
 func getVideoSourceUrl(videoId string) string {
 	videoApiUrl := prepareApiUrl(videoId)
-
 	body := getResponseAsBytes(videoApiUrl)
 
 	response := Response{}
@@ -124,22 +120,16 @@ func getValue(data string, expr string, position int) string {
 }
 
 func main() {
-	urlParam := flag.String("urlParam", "", "Link to player.pl video")
-	targetDirParam := flag.String("target", DefaultTargetDir, "Target directory")
-	videoIdParam := flag.String("videoid", "", "You can put video id instead of url")
+	urlParam := flag.String("url", "", "Player.pl video url")
+	targetDirParam := flag.String("dir", DefaultTargetDir, "Directory path")
+	videoIdParam := flag.String("id", "", "Video id")
 	flag.Parse()
 
-	if *targetDirParam != DefaultTargetDir {
-		fmt.Println("Provided target dir path: " + *targetDirParam)
-	} else {
-		fmt.Println("Target dir path has not been provided. Using default path: " + DefaultTargetDir)
-	}
-
 	if *videoIdParam != "" {
-		fmt.Println("Video id provided. Downloading by id...")
+		fmt.Println("Video id provided.")
 		DownloadByVideoId(*videoIdParam, *targetDirParam)
 	} else if *urlParam != "" {
-		fmt.Println("Video id provided. Downloading by id...")
+		fmt.Println("Video url provided.")
 		Download(*urlParam, *targetDirParam)
 	} else {
 		log.Fatal("Please provide video urlParam or video id")
